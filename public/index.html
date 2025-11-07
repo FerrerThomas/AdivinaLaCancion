@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>🎮 Juego del Botón - Multijugador</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          animation: {
+            'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'bounce-slow': 'bounce 2s infinite',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Mejoras básicas para móviles */
+    @media (max-width: 640px) {
+      input {
+        font-size: 16px; /* Previene zoom en iOS */
+      }
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 min-h-screen text-white">
+  <div class="container mx-auto px-4 py-4 sm:py-8">
+    <!-- Header -->
+    <div class="text-center mb-4 sm:mb-8">
+      <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold mb-2 bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">
+        🎮 Juego del Botón
+      </h1>
+      <p class="text-gray-300 text-base sm:text-lg">¡El más rápido gana!</p>
+    </div>
+
+    <!-- Lobby Section -->
+    <div id="lobby" class="max-w-md mx-auto bg-white/10 backdrop-blur-sm rounded-2xl p-4 sm:p-6 shadow-2xl">
+      <div class="mb-4 sm:mb-6">
+        <label for="playerName" class="block text-sm font-medium mb-2">Tu nombre:</label>
+        <input 
+          type="text" 
+          id="playerName" 
+          placeholder="Ingresa tu nombre"
+          class="w-full px-3 sm:px-4 py-3 rounded-lg bg-white/20 border border-white/30 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 text-base"
+        >
+      </div>
+      
+      <div class="space-y-3 sm:space-y-4">
+        <button 
+          id="createBtn" 
+          class="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold py-3 px-4 sm:px-6 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg text-base"
+        >
+          🏠 Crear Sala
+        </button>
+        
+        <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+          <input 
+            type="text" 
+            id="roomInput" 
+            placeholder="Código de sala"
+            class="flex-1 px-3 sm:px-4 py-3 rounded-lg bg-white/20 border border-white/30 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 text-base"
+          >
+          <button 
+            id="joinBtn" 
+            class="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-bold py-3 px-4 sm:px-6 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg text-base"
+          >
+            ➕ Unirse
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Game Section -->
+    <div id="gameSection" class="max-w-2xl mx-auto mt-4 sm:mt-8 hidden">
+      <!-- Room Info -->
+      <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-4 sm:p-6 mb-4 sm:mb-6 shadow-2xl">
+        <div class="text-center mb-4">
+          <h2 class="text-xl sm:text-2xl font-bold mb-2">Sala: <span id="roomCode" class="text-yellow-400 font-mono text-lg sm:text-xl"></span></h2>
+          <p id="roomStatus" class="text-gray-300 text-sm sm:text-base">Esperando jugadores...</p>
+        </div>
+        
+        <!-- Players List -->
+        <div id="playersList" class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4">
+        </div>
+        
+        <!-- Game Controls -->
+        <div id="gameControls" class="space-y-3 sm:space-y-4">
+          <button 
+            id="startGameBtn" 
+            class="w-full bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white font-bold py-3 px-4 sm:px-6 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg hidden text-base"
+          >
+            🚀 Iniciar Juego
+          </button>
+          
+          <button 
+            id="resetGameBtn" 
+            class="w-full bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white font-bold py-3 px-4 sm:px-6 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg hidden text-base"
+          >
+            🔄 Jugar de Nuevo
+          </button>
+        </div>
+      </div>
+
+      <!-- Game Button -->
+      <div class="text-center">
+                 <button 
+           id="gameButton" 
+           class="w-48 h-48 sm:w-56 sm:h-56 md:w-64 md:h-64 bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white text-2xl sm:text-3xl md:text-4xl font-bold rounded-full transition-all duration-300 transform hover:scale-110 shadow-2xl hidden animate-pulse-slow"
+         >
+           ¡PRESIONA!
+         </button>
+      </div>
+
+      <!-- Winner Display -->
+      <div id="winnerDisplay" class="mt-4 sm:mt-6 text-center hidden">
+        <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-4 sm:p-6 shadow-2xl">
+          <h3 id="winnerText" class="text-2xl sm:text-3xl font-bold mb-3 sm:mb-4"></h3>
+          <div id="winnerName" class="text-xl sm:text-2xl text-yellow-400 font-bold"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Error Modal -->
+    <div id="errorModal" class="fixed inset-0 bg-black/50 flex items-center justify-center hidden z-50 p-4">
+      <div class="bg-white rounded-2xl p-4 sm:p-6 mx-4 max-w-sm w-full">
+        <h3 class="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4">Error</h3>
+        <p id="errorMessage" class="text-gray-600 mb-4 text-sm sm:text-base"></p>
+        <button 
+          onclick="closeErrorModal()" 
+          class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg text-base"
+        >
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    let roomId = null;
+    let playerName = '';
+    let isHost = false;
+
+    // DOM Elements
+    const lobby = document.getElementById('lobby');
+    const gameSection = document.getElementById('gameSection');
+    const playerNameInput = document.getElementById('playerName');
+    const createBtn = document.getElementById('createBtn');
+    const joinBtn = document.getElementById('joinBtn');
+    const roomInput = document.getElementById('roomInput');
+    const roomCode = document.getElementById('roomCode');
+    const roomStatus = document.getElementById('roomStatus');
+    const playersList = document.getElementById('playersList');
+    const startGameBtn = document.getElementById('startGameBtn');
+    const resetGameBtn = document.getElementById('resetGameBtn');
+    const gameButton = document.getElementById('gameButton');
+    const winnerDisplay = document.getElementById('winnerDisplay');
+    const winnerText = document.getElementById('winnerText');
+    const winnerName = document.getElementById('winnerName');
+    const errorModal = document.getElementById('errorModal');
+    const errorMessage = document.getElementById('errorMessage');
+
+    // Event Listeners
+    createBtn.addEventListener('click', createRoom);
+    joinBtn.addEventListener('click', joinRoom);
+    startGameBtn.addEventListener('click', startGame);
+    resetGameBtn.addEventListener('click', resetGame);
+    gameButton.addEventListener('click', pressButton);
+    
+
+
+    function createRoom() {
+      playerName = playerNameInput.value.trim() || 'Jugador Anónimo';
+      console.log('Intentando crear sala con nombre:', playerName);
+      socket.emit('createRoom', playerName);
+    }
+
+    function joinRoom() {
+      const roomCode = roomInput.value.trim();
+      playerName = playerNameInput.value.trim() || 'Jugador Anónimo';
+      
+      if (!roomCode) {
+        showError('Por favor ingresa el código de la sala');
+        return;
+      }
+      
+      socket.emit('joinRoom', { roomId: roomCode, playerName });
+    }
+
+    function startGame() {
+      socket.emit('startGame', roomId);
+    }
+
+    function resetGame() {
+      socket.emit('resetGame', roomId);
+    }
+
+    function pressButton() {
+      socket.emit('pressButton', roomId);
+    }
+
+    function showError(message) {
+      errorMessage.textContent = message;
+      errorModal.classList.remove('hidden');
+    }
+
+    function closeErrorModal() {
+      errorModal.classList.add('hidden');
+    }
+
+    function updatePlayersList(players, playerNames) {
+      playersList.innerHTML = '';
+      players.forEach(playerId => {
+        const playerDiv = document.createElement('div');
+        playerDiv.className = 'bg-white/20 rounded-lg p-3 text-center';
+        playerDiv.innerHTML = `
+          <div class="font-semibold text-sm sm:text-base">${playerNames[playerId]}</div>
+          <div class="text-xs sm:text-sm text-gray-300">${playerId === socket.id ? '(Tú)' : ''}</div>
+        `;
+        playersList.appendChild(playerDiv);
+      });
+    }
+
+    // Socket Events
+    socket.on('roomCreated', (data) => {
+      console.log('Sala creada recibida:', data);
+      roomId = data.roomId;
+      isHost = true;
+      roomCode.textContent = roomId;
+      roomStatus.textContent = 'Sala creada - Esperando jugadores...';
+      lobby.classList.add('hidden');
+      gameSection.classList.remove('hidden');
+      updatePlayersList(data.players, data.playerNames);
+      
+      if (data.players.length >= 2) {
+        startGameBtn.classList.remove('hidden');
+      }
+    });
+
+    socket.on('roomJoined', (data) => {
+      roomId = data.roomId;
+      isHost = false;
+      roomCode.textContent = roomId;
+      roomStatus.textContent = 'Unido a la sala';
+      lobby.classList.add('hidden');
+      gameSection.classList.remove('hidden');
+      updatePlayersList(data.players, data.playerNames);
+    });
+
+    socket.on('playerJoined', (data) => {
+      updatePlayersList(data.players, data.playerNames);
+      roomStatus.textContent = `${data.players.length} jugadores en la sala`;
+      
+      if (isHost && data.players.length >= 2) {
+        startGameBtn.classList.remove('hidden');
+      }
+    });
+
+    socket.on('playerLeft', (data) => {
+      updatePlayersList(data.players, data.playerNames);
+      roomStatus.textContent = `${data.players.length} jugadores en la sala`;
+      
+      if (data.players.length < 2) {
+        startGameBtn.classList.add('hidden');
+        gameButton.classList.add('hidden');
+      }
+    });
+
+    socket.on('gameStarted', () => {
+      roomStatus.textContent = '¡Juego iniciado! ¡Presiona el botón!';
+      startGameBtn.classList.add('hidden');
+      gameButton.classList.remove('hidden');
+      winnerDisplay.classList.add('hidden');
+      gameButton.disabled = false;
+      gameButton.className = 'w-48 h-48 sm:w-56 sm:h-56 md:w-64 md:h-64 bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white text-2xl sm:text-3xl md:text-4xl font-bold rounded-full transition-all duration-300 transform hover:scale-110 shadow-2xl animate-pulse-slow';
+    });
+
+    socket.on('gameResult', (data) => {
+      gameButton.disabled = true;
+      gameButton.classList.remove('animate-pulse-slow');
+      
+      if (socket.id === data.winner) {
+        gameButton.className = 'w-48 h-48 sm:w-56 sm:h-56 md:w-64 md:h-64 bg-gradient-to-r from-green-500 to-emerald-600 text-white text-2xl sm:text-3xl md:text-4xl font-bold rounded-full transition-all duration-300 shadow-2xl animate-bounce-slow';
+        gameButton.textContent = '¡GANASTE! 🎉';
+        winnerText.textContent = '¡Felicidades!';
+        winnerText.className = 'text-2xl sm:text-3xl font-bold mb-3 sm:mb-4 text-green-400';
+      } else {
+        gameButton.className = 'w-48 h-48 sm:w-56 sm:h-56 md:w-64 md:h-64 bg-gradient-to-r from-gray-500 to-gray-600 text-white text-2xl sm:text-3xl md:text-4xl font-bold rounded-full transition-all duration-300 shadow-2xl';
+        gameButton.textContent = 'Perdiste 😢';
+        winnerText.textContent = 'El ganador es:';
+        winnerText.className = 'text-2xl sm:text-3xl font-bold mb-3 sm:mb-4 text-gray-300';
+      }
+      
+      winnerName.textContent = data.winnerName;
+      winnerDisplay.classList.remove('hidden');
+      resetGameBtn.classList.remove('hidden');
+    });
+
+    socket.on('gameReset', (data) => {
+      gameButton.classList.add('hidden');
+      winnerDisplay.classList.add('hidden');
+      resetGameBtn.classList.add('hidden');
+      startGameBtn.classList.remove('hidden');
+      roomStatus.textContent = `${data.players.length} jugadores en la sala`;
+      updatePlayersList(data.players, data.playerNames);
+    });
+
+    socket.on('roomError', (message) => {
+      showError(message);
+    });
+
+    // Close modal when clicking outside
+    errorModal.addEventListener('click', (e) => {
+      if (e.target === errorModal) {
+        closeErrorModal();
+      }
+    });
+  </script>
+</body>
+</html>
